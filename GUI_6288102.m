@@ -22,7 +22,7 @@ function varargout = GUI_6288102(varargin)
 
 % Edit the above text to modify the response to help GUI_6288102
 
-% Last Modified by GUIDE v2.5 29-Aug-2022 09:43:03
+% Last Modified by GUIDE v2.5 11-Sep-2022 22:46:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -128,13 +128,17 @@ global image;
 global pic;
 global filename;
 global pathname;
+
 [filename, pathname]=uigetfile({'*.jpg'},'file select');
-image=strcat(pathname,filename);
-pic=imread(image);
-axes(handles.axes1); imshow(pic);
-set (handles.edit1, 'string',filename);
-
-
+if isequal(filename,0)
+    disp('User is cancel');
+else
+    image=strcat(pathname,filename);
+    pic=imread(image);
+    axes(handles.axes1); imshow(pic);
+    set (handles.edit1, 'string',filename);
+end
+    
 % --- Executes on button press in pushbutton2.
 function pushbutton2_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton2 (see GCBO)
@@ -206,7 +210,7 @@ global pic;
 gray = rgb2gray(pic);
 bw = im2bw(gray, 0.5);
 bw2 =~ im2bw(gray);
-bw_area = bwarea(bw);
+bw_area = bwarea(bw2)/10;
 axes(handles.axes2); imshow(bw);
 set(handles.edit2, 'string', num2str(bw_area));
 
@@ -230,8 +234,7 @@ function pushbutton15_Callback(hObject, eventdata, handles)
 
 global pic;
 
-gray = rgb2gray(pic);
-sb = edge(gray, 'Sobel');
+sb = edge(im2bw(pic), 'sobel', 0.05);
 sb_area = bwarea(sb);
 axes(handles.axes2); imshow(sb);
 set(handles.edit2, 'string', num2str(sb_area));
@@ -245,8 +248,7 @@ function pushbutton16_Callback(hObject, eventdata, handles)
 
 global pic;
 
-gray = rgb2gray(pic);
-cn = edge(gray, 'Canny');
+cn = edge(im2bw(pic), 'canny', 0.05);
 cn_area = bwarea(cn);
 axes(handles.axes2); imshow(cn);
 set(handles.edit2, 'string', num2str(cn_area));
@@ -256,7 +258,7 @@ function pushbutton17_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton17 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+close
 
 % --- Executes on button press in pushbutton18.
 function pushbutton18_Callback(hObject, eventdata, handles)
@@ -264,8 +266,11 @@ function pushbutton18_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+global excel;
 
-table = xlsread('/Users/punny/Desktop/Digital Image Processing/GUI_6288102.xlsx');
+excel = '/Users/punny/Documents/GitHub/Digital Image Processing/GUI_6288102.xlsx';
+
+table = xlsread(excel);
 [rr,cc]=size(table);
 
 global pic;
@@ -277,11 +282,20 @@ data(2) = mean(mean(pic(:,:,1)));
 data(3) = mean(mean(pic(:,:,2)));
 data(4) = mean(mean(pic(:,:,3)));
 bw = im2bw(gray, 0.5);
-data(5) = bwarea(bw);
-SobelEdge=edge(gray,'sobel'); 
+bw2 =~ im2bw(gray);
+data(5) = bwarea(bw2)/10;
+SobelEdge=edge(im2bw(pic),'sobel',0.05); 
 data(6)=bwarea(SobelEdge);
-CannyEdge=edge(gray,'canny'); 
+CannyEdge=edge(im2bw(pic),'canny',0.05); 
 data(7)=bwarea(CannyEdge);
+glcm=graycomatrix(gray,'O', [0,1]);
+S=graycoprops(glcm);
+data(8)=S.Energy*100;
+data(9)=S.Contrast*100;
+data(10)=S.Correlation*100;
+data(11)=S.Homogeneity*100;
+rngfil=rangefilt(pic);  
+data(12)=entropy(rngfil)*100;
 
 min = 999;
 rec = 0;
@@ -289,7 +303,7 @@ for i = 1 : rr
     diff = 0;
     for j = 1 : cc
 %         disp(table(i,j)); disp(data(j));
-        diff = diff+sqrt((round(table(i,j),2)-round(data(j),2)) * (round(table(i,j),2)-round(data(j),2)));
+        diff = diff+sqrt((table(i,j)-data(j)) * (table(i,j)-data(j)));
     end
     if (diff <= 0)
         min = diff;
@@ -302,7 +316,7 @@ disp(rec);
 
 if(rec ~= 0)
     cellx = cat(2, 'A', num2str(rec+2));
-    [~,ff]=xlsread('/Users/punny/Desktop/Digital Image Processing/GUI_6288102.xlsx',1,cellx);
+    [~,ff]=xlsread(excel,1,cellx);
     file=ff{1};
     disp(file);
     fullfile = strcat(pathname, file);
@@ -318,5 +332,146 @@ end
     
 
 
+% --- Executes on button press in pushbutton19.
+function pushbutton19_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton19 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global excel;
+global pic;
+global filename;
+
+excel = '/Users/punny/Documents/GitHub/Digital Image Processing/GUI_6288102.xlsx';
+
+table = xlsread(excel);
+[rr,cc]=size(table);
 
 
+gray = rgb2gray(pic);
+data(1) = mean(mean(gray));
+data(2) = mean(mean(pic(:,:,1)));
+data(3) = mean(mean(pic(:,:,2)));
+data(4) = mean(mean(pic(:,:,3)));
+bw = im2bw(gray, 0.5);
+bw2 =~ im2bw(gray);
+data(5) = bwarea(bw2)/10;
+SobelEdge=edge(im2bw(pic),'sobel',0.05); 
+data(6)=bwarea(SobelEdge);
+CannyEdge=edge(im2bw(pic),'canny',0.05); 
+data(7)=bwarea(CannyEdge);
+glcm=graycomatrix(gray,'O', [0,1]);
+S=graycoprops(glcm);
+data(8)=S.Energy*100;
+data(9)=S.Contrast*100;
+data(10)=S.Correlation*100;
+data(11)=S.Homogeneity*100;
+rngfil=rangefilt(pic);  
+data(12)=entropy(rngfil)*100;
+ 
+cell1=cat(2,'A',num2str(rr+3));
+cell2=cat(2,'B',num2str(rr+3));
+cell3=cat(2,'C',num2str(rr+3));
+cell4=cat(2,'D',num2str(rr+3));
+cell5=cat(2,'E',num2str(rr+3));
+cell6=cat(2,'F',num2str(rr+3));
+cell7=cat(2,'G',num2str(rr+3));
+cell8=cat(2,'H',num2str(rr+3));
+cell9=cat(2,'I',num2str(rr+3));
+cell10=cat(2,'J',num2str(rr+3));
+cell11=cat(2,'K',num2str(rr+3));
+cell12=cat(2,'L',num2str(rr+3));
+cell13=cat(2,'M',num2str(rr+3));
+
+
+writecell({filename}, excel, 'Sheet', 1, 'Range', cell1);
+writematrix(data(1), excel, 'Sheet', 1, 'Range', cell2);
+writematrix(data(2), excel, 'Sheet', 1, 'Range', cell3);
+writematrix(data(3), excel, 'Sheet', 1, 'Range', cell4);
+writematrix(data(4), excel, 'Sheet', 1, 'Range', cell5);
+writematrix(data(5), excel, 'Sheet', 1, 'Range', cell6);
+writematrix(data(6), excel, 'Sheet', 1, 'Range', cell7);
+writematrix(data(7), excel, 'Sheet', 1, 'Range', cell8);
+writematrix(data(8), excel, 'Sheet', 1, 'Range', cell9);
+writematrix(data(9), excel, 'Sheet', 1, 'Range', cell10);
+writematrix(data(10), excel, 'Sheet', 1, 'Range', cell11);
+writematrix(data(11), excel, 'Sheet', 1, 'Range', cell12);
+writematrix(data(12), excel, 'Sheet', 1, 'Range', cell13);
+
+disp(filename);
+disp('Train data finished');
+
+
+% --- Executes on button press in pushbutton20.
+function pushbutton20_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton20 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global pic;
+
+gray=rgb2gray(pic);
+glcm=graycomatrix(gray,'O', [0,1]);
+S=graycoprops(glcm);
+axes(handles.axes2); cla; imshow (gray);
+energy=S.Energy*1000;
+set (handles.edit2, 'string',num2str(energy));
+
+
+% --- Executes on button press in pushbutton21.
+function pushbutton21_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton21 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global pic;
+
+gray=rgb2gray(pic);
+glcm=graycomatrix(gray,'O', [0,1]);
+S=graycoprops(glcm);
+axes(handles.axes2); cla; imshow (gray);
+cont=S.Contrast*100;
+set (handles.edit2, 'string',num2str(cont));
+
+% --- Executes on button press in pushbutton22.
+function pushbutton22_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton22 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global pic;
+
+gray=rgb2gray(pic);
+glcm=graycomatrix(gray,'O', [0,1]);
+S=graycoprops(glcm);
+axes(handles.axes2); cla; imshow (gray);
+corr=S.Correlation*100;
+set (handles.edit2, 'string',num2str(corr));
+
+% --- Executes on button press in pushbutton23.
+function pushbutton23_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton23 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global pic;
+
+rngfil=rangefilt(pic);  
+entro=entropy(rngfil)*100; 
+axes(handles.axes2); cla; imshow (rngfil);
+set (handles.edit2, 'string',num2str(entro));
+
+% --- Executes on button press in pushbutton24.
+function pushbutton24_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton24 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+global pic;
+
+gray=rgb2gray(pic);
+glcm=graycomatrix(gray,'O', [0,1]);
+S=graycoprops(glcm);
+axes(handles.axes2); cla; imshow (gray);
+homo=S.Homogeneity*100;
+set (handles.edit2, 'string',num2str(homo));
